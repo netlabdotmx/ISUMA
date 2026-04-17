@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { odooCall } from "@/lib/odoo";
+import { getSessionId } from "@/lib/session";
 
 // GET /api/odoo/pickings/[id] — Picking detail
 export async function GET(
@@ -7,6 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const sid = await getSessionId();
     const { id } = await params;
     const pickingId = parseInt(id);
 
@@ -29,6 +31,7 @@ export async function GET(
         move_ids: number[];
       }[]
     >(
+      sid,
       "stock.picking",
       "search_read",
       [[["id", "=", pickingId]]],
@@ -58,6 +61,7 @@ export async function GET(
         location_dest_id: [number, string];
       }[]
     >(
+      sid,
       "stock.move",
       "search_read",
       [[["picking_id", "=", pickingId]]],
@@ -85,6 +89,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const sid = await getSessionId();
     const { id } = await params;
     const pickingId = parseInt(id);
     const { action, move_quantities } = await request.json() as {
@@ -97,7 +102,7 @@ export async function POST(
     }
 
     if (action === "confirm") {
-      await odooCall("stock.picking", "action_confirm", [[pickingId]]);
+      await odooCall(sid, "stock.picking", "action_confirm", [[pickingId]]);
       return NextResponse.json({ success: true });
     }
 
@@ -105,18 +110,18 @@ export async function POST(
       // Update done quantities if provided
       if (move_quantities) {
         for (const [moveId, qty] of Object.entries(move_quantities)) {
-          await odooCall("stock.move", "write", [
+          await odooCall(sid, "stock.move", "write", [
             [parseInt(moveId)],
             { quantity: qty },
           ]);
         }
       }
-      await odooCall("stock.picking", "button_validate", [[pickingId]]);
+      await odooCall(sid, "stock.picking", "button_validate", [[pickingId]]);
       return NextResponse.json({ success: true });
     }
 
     if (action === "cancel") {
-      await odooCall("stock.picking", "action_cancel", [[pickingId]]);
+      await odooCall(sid, "stock.picking", "action_cancel", [[pickingId]]);
       return NextResponse.json({ success: true });
     }
 

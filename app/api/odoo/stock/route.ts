@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { odooCall, type OdooQuant } from "@/lib/odoo";
+import { getSessionId } from "@/lib/session";
 
 export async function GET(request: NextRequest) {
   try {
+    const sid = await getSessionId();
     const { searchParams } = new URL(request.url);
     const locationId = searchParams.get("location_id");
     const productId = searchParams.get("product_id");
@@ -20,6 +22,7 @@ export async function GET(request: NextRequest) {
     }
 
     const quants = await odooCall<OdooQuant[]>(
+      sid,
       "stock.quant",
       "search_read",
       [domain],

@@ -1,4 +1,5 @@
 import { odooCall } from "@/lib/odoo";
+import { getSessionId } from "@/lib/session";
 import { PickingStatusBadge } from "@/components/inventory/PickingStatusBadge";
 import { ArrowRightLeft, ChevronLeft } from "lucide-react";
 import Link from "next/link";
@@ -39,8 +40,10 @@ export async function generateMetadata({
 }
 
 async function getPickingDetail(id: string) {
+  const sid = await getSessionId();
   const [pickings, moves] = await Promise.all([
     odooCall<Picking[]>(
+      sid,
       "stock.picking",
       "search_read",
       [[["id", "=", parseInt(id)]]],
@@ -54,6 +57,7 @@ async function getPickingDetail(id: string) {
       }
     ),
     odooCall<Move[]>(
+      sid,
       "stock.move",
       "search_read",
       [[["picking_id", "=", parseInt(id)]]],

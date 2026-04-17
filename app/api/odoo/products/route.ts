@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { odooCall, type OdooProduct } from "@/lib/odoo";
+import { getSessionId } from "@/lib/session";
 
 export async function GET(request: NextRequest) {
   try {
+    const sid = await getSessionId();
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") ?? "";
     const limit = parseInt(searchParams.get("limit") ?? "20");
@@ -13,6 +15,7 @@ export async function GET(request: NextRequest) {
       : [["type", "in", ["consu", "product"]]];
 
     const products = await odooCall<OdooProduct[]>(
+      sid,
       "product.product",
       "search_read",
       [domain],

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { odooCall, type OdooPicking } from "@/lib/odoo";
+import { getSessionId } from "@/lib/session";
 
 interface CreatePickingBody {
   picking_type_id: number;
@@ -20,6 +21,7 @@ interface CreatePickingBody {
 
 export async function GET(request: NextRequest) {
   try {
+    const sid = await getSessionId();
     const { searchParams } = new URL(request.url);
     const state = searchParams.get("state");
     const code = searchParams.get("code"); // incoming | outgoing | internal
@@ -41,6 +43,7 @@ export async function GET(request: NextRequest) {
     }
 
     const pickings = await odooCall<OdooPicking[]>(
+      sid,
       "stock.picking",
       "search_read",
       [domain],
@@ -69,6 +72,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const sid = await getSessionId();
     const body: CreatePickingBody = await request.json();
 
     // Validate required fields
@@ -86,7 +90,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. Create the picking
-    const pickingId = await odooCall<number>("stock.picking", "create", [
+    const pickingId = await odooCall<number>(sid, "stock.picking", "create", [
       {
         picking_type_id: body.picking_type_id,
         origin: body.origin ?? "",
@@ -99,7 +103,7 @@ export async function POST(request: NextRequest) {
     // 2. Create stock.move for each line
     const moveIds: number[] = [];
     for (const line of body.move_lines) {
-      const moveId = await odooCall<number>("stock.move", "create", [
+      const moveId = await odooCall<number>(sid, "stock.move", "create", [
         {
           picking_id: pickingId,
           product_id: line.product_id,
@@ -115,13 +119,14 @@ export async function POST(request: NextRequest) {
 
     // 3. Confirm if requested
     if (body.auto_confirm || body.auto_validate) {
-      await odooCall("stock.picking", "action_confirm", [[pickingId]]);
+      await odooCall(sid, "stock.picking", "action_confirm", [[pickingId]]);
     }
 
     // 4. Validate if requested
     if (body.auto_validate) {
       // Set done quantities equal to demanded quantities
       const moveLines = await odooCall<{ id: number; product_uom_qty: number }[]>(
+        sid,
         "stock.move",
         "search_read",
         [[["picking_id", "=", pickingId]]],
@@ -130,13 +135,13 @@ export async function POST(request: NextRequest) {
 
       // Assign move_line_ids with done quantities
       for (const mv of moveLines) {
-        await odooCall("stock.move", "write", [
+        await odooCall(sid, "stock.move", "write", [
           [mv.id],
           { quantity: mv.product_uom_qty },
         ]);
       }
 
-      await odooCall("stock.picking", "button_validate", [[pickingId]]);
+      await odooCall(sid, "stock.picking", "button_validate", [[pickingId]]);
     }
 
     return NextResponse.json({ pickingId, moveIds }, { status: 201 });

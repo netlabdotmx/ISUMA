@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { odooCall, type OdooLocation } from "@/lib/odoo";
+import { getSessionId } from "@/lib/session";
 
 export async function GET(request: NextRequest) {
   try {
+    const sid = await getSessionId();
     const { searchParams } = new URL(request.url);
     const warehouseId = searchParams.get("warehouse_id");
 
@@ -13,8 +15,7 @@ export async function GET(request: NextRequest) {
     // We use child_of on the stock location of the warehouse
     if (warehouseId) {
       // Get the warehouse's stock location ID
-      const warehouses = await odooCall<{ id: number; lot_stock_id: [number, string] }[]>(
-        "stock.warehouse",
+      const warehouses = await odooCall<{ id: number; lot_stock_id: [number, string] }[]>(        sid,        "stock.warehouse",
         "search_read",
         [[["id", "=", parseInt(warehouseId)]]],
         { fields: ["id", "lot_stock_id"] }
@@ -26,6 +27,7 @@ export async function GET(request: NextRequest) {
     }
 
     const locations = await odooCall<OdooLocation[]>(
+      sid,
       "stock.location",
       "search_read",
       [domain],

@@ -1,6 +1,8 @@
 // lib/session.ts
 // Web Crypto API — compatible with Edge (middleware) and Node.js (API routes)
 
+import { cookies } from "next/headers";
+
 export const COOKIE_NAME = "isuma_session";
 export const MAX_AGE = 8 * 60 * 60; // 8 horas en segundos
 
@@ -53,4 +55,14 @@ export async function parseSession(value: string): Promise<SessionUser | null> {
   } catch {
     return null;
   }
+}
+
+/** Read session from cookie in API routes. Returns sessionId or throws. */
+export async function getSessionId(): Promise<string> {
+  const cookieStore = await cookies();
+  const value = cookieStore.get(COOKIE_NAME)?.value;
+  if (!value) throw new Error("No session cookie");
+  const user = await parseSession(value);
+  if (!user?.sessionId) throw new Error("No Odoo sessionId in cookie");
+  return user.sessionId;
 }

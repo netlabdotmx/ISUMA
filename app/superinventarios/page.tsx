@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { odooCall } from "@/lib/odoo";
+import { getSessionId } from "@/lib/session";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { PickingStatusBadge } from "@/components/inventory/PickingStatusBadge";
 import {
@@ -26,24 +27,26 @@ interface Picking {
 }
 
 async function getDashboardData() {
+  const sid = await getSessionId();
   const [productCount, locationCount, pendingCount, incomingCount, recentPickings] =
     await Promise.all([
-      odooCall<number>("product.product", "search_count", [
+      odooCall<number>(sid, "product.product", "search_count", [
         [["type", "in", ["consu", "product"]]],
       ]),
-      odooCall<number>("stock.location", "search_count", [
+      odooCall<number>(sid, "stock.location", "search_count", [
         [["usage", "=", "internal"], ["active", "=", true]],
       ]),
-      odooCall<number>("stock.picking", "search_count", [
+      odooCall<number>(sid, "stock.picking", "search_count", [
         [["state", "in", ["draft", "waiting", "confirmed", "assigned"]]],
       ]),
-      odooCall<number>("stock.picking", "search_count", [
+      odooCall<number>(sid, "stock.picking", "search_count", [
         [
           ["state", "in", ["draft", "waiting", "confirmed", "assigned"]],
           ["picking_type_id.code", "=", "incoming"],
         ],
       ]),
       odooCall<Picking[]>(
+        sid,
         "stock.picking",
         "search_read",
         [[["state", "!=", "cancel"]]],

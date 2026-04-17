@@ -1,90 +1,89 @@
 const ODOO_URL = process.env.ODOO_URL!;
 const ODOO_DB = process.env.ODOO_DB!;
 
-// Fallback service-account credentials for background calls (no user session)
-const ODOO_USER = process.env.ODOO_USER!;
-const ODOO_API_KEY = process.env.ODOO_API_KEY!;
+// --- Low-level JSON-RPC with session ---
 
-// Service-account session cache
-let serviceSession: { sessionId: string; uid: number; ts: number } | null = null;
-const SESSION_TTL = 7 * 3600 * 1000; // 7 hours
+async function jsonRpcWithSession(
+  url: string,
+  params: Record<string, unknown>,
+  sessionId?: string
+) {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (sessionId) headers["Cookie"] = `session_id=${sessionId}`;
 
-async function getServiceSession(): Promise<{ sessionId: string; uid: number }> {
-  if (serviceSession && Date.now() - serviceSession.ts < SESSION_TTL) {
-    return serviceSession;
-  }
-
-  const res = await fetch(`${ODOO_URL}/web/session/authenticate`, {
+  const res = await fetch(`${ODOO_URL}${url}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({
       jsonrpc: "2.0",
       method: "call",
-      params: { db: ODOO_DB, login: ODOO_USER, password: ODOO_API_KEY },
+      params,
+      id: Date.now(),
     }),
   });
-
-  if (!res.ok) throw new Error("Service account auth HTTP error: " + res.status);
 
   const data = await res.json() as {
-    result?: { uid: number | false };
-    error?: unknown;
+    result?: unknown;
+    error?: { message?: string; data?: { message?: string } };
   };
-
-  const uid = data?.result?.uid;
-  if (!uid) throw new Error("Authentication failed: invalid service credentials");
-
-  const setCookie = res.headers.get("set-cookie") ?? "";
-  const match = setCookie.match(/session_id=([^;]+)/);
-  if (!match) throw new Error("No session_id in Odoo response");
-
-  serviceSession = { sessionId: match[1], uid, ts: Date.now() };
-  return serviceSession;
-}
-
-export async function odooCall<T>(
-  model: string,
-  method: string,
-  args: unknown[],
-  kwargs: Record<string, unknown> = {},
-  sessionId?: string
-): Promise<T> {
-  let sid: string;
-  if (sessionId) {
-    sid = sessionId;
-  } else {
-    const svc = await getServiceSession();
-    sid = svc.sessionId;
-  }
-
-  const res = await fetch(`${ODOO_URL}/web/dataset/call_kw`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Cookie: `session_id=${sid}`,
-    },
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      method: "call",
-      params: {
-        model,
-        method,
-        args,
-        kwargs,
-      },
-    }),
-  });
-
-  if (!res.ok) throw new Error(`Odoo HTTP error ${res.status}`);
-
-  const data = await res.json() as { result?: T; error?: { message?: string; data?: { message?: string } } };
 
   if (data.error) {
     const msg = data.error.data?.message ?? data.error.message ?? "Odoo error";
     throw new Error(msg);
   }
 
-  return data.result as T;
+  return data.result;
+}
+
+// --- Authentication ---
+
+export async function authenticateUser(login: string, password: string) {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+
+  const res = await fetch(`${ODOO_URL}/web/session/authenticate`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      method: "call",
+      params: { db: ODOO_DB, login, password },
+    }),
+  });
+
+  const setCookie = res.headers.get("set-cookie") ?? "";
+  const match = setCookie.match(/session_id=([^;]+)/);
+  const sessionId = match?.[1] ?? "";
+
+  const data = await res.json() as {
+    result?: { uid: number | false; name: string; username: string };
+    error?: unknown;
+  };
+
+  if (!data.result?.uid) throw new Error("Credenciales inválidas");
+
+  return {
+    uid: data.result.uid as number,
+    name: data.result.name,
+    username: data.result.username,
+    sessionId,
+  };
+}
+
+// --- Main call function (requires user sessionId) ---
+
+export async function odooCall<T>(
+  sessionId: string,
+  model: string,
+  method: string,
+  args: unknown[],
+  kwargs: Record<string, unknown> = {}
+): Promise<T> {
+  const result = await jsonRpcWithSession(
+    "/web/dataset/call_kw",
+    { model, method, args, kwargs },
+    sessionId
+  );
+  return result as T;
 }
 
 // ============================================================

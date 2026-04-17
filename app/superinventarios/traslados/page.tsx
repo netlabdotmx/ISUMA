@@ -1,4 +1,5 @@
 import { odooCall } from "@/lib/odoo";
+import { getSessionId } from "@/lib/session";
 import { PickingStatusBadge } from "@/components/inventory/PickingStatusBadge";
 import { ArrowRightLeft, Plus } from "lucide-react";
 import Link from "next/link";
@@ -20,7 +21,9 @@ interface Picking {
 }
 
 async function getTransfers(): Promise<Picking[]> {
+  const sid = await getSessionId();
   return odooCall<Picking[]>(
+    sid,
     "stock.picking",
     "search_read",
     [[["picking_type_id.code", "=", "internal"], ["state", "!=", "cancel"]]],
