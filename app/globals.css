@@ -1,0 +1,244 @@
+@import "tailwindcss";
+
+/* ============================================
+   ISUMA WEB — TAILWIND v4 THEME
+   ============================================ */
+
+@theme {
+  /* Brand Colors — Sunny / ISUMA */
+  --color-sunny-50: #fffbeb;
+  --color-sunny-100: #fef3c7;
+  --color-sunny-200: #fde68a;
+  --color-sunny-300: #fcd34d;
+  --color-sunny-400: #fbbf24;
+  --color-sunny-500: #f59e0b;
+  --color-sunny-600: #d97706;
+  --color-sunny-700: #b45309;
+  --color-sunny-800: #92400e;
+  --color-sunny-900: #78350f;
+
+  --color-ocean-50: #eff6ff;
+  --color-ocean-100: #dbeafe;
+  --color-ocean-500: #3b82f6;
+  --color-ocean-600: #2563eb;
+  --color-ocean-700: #1d4ed8;
+  --color-ocean-800: #1e40af;
+  --color-ocean-900: #1e3a8a;
+
+  /* Semantic brand tokens */
+  --color-brand: #f59e0b;
+  --color-brand-dark: #d97706;
+  --color-brand-light: #fbbf24;
+
+  /* SuperInventarios dark theme */
+  --color-inv-bg: #0f172a;
+  --color-inv-surface: #1e293b;
+  --color-inv-border: #334155;
+  --color-inv-muted: #64748b;
+
+  /* Typography */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Inter", system-ui, sans-serif;
+
+  /* Custom animations */
+  --animate-fade-up: fade-up 0.6s ease-out forwards;
+  --animate-fade-in: fade-in 0.4s ease-out forwards;
+  --animate-pulse-slow: pulse-slow 3s ease-in-out infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-float-delayed: float 6s ease-in-out 2s infinite;
+  --animate-shimmer: shimmer 3s linear infinite;
+  --animate-slide-down: slide-down 0.3s ease-out forwards;
+  --animate-orb-1: orb-move-1 18s ease-in-out infinite;
+  --animate-orb-2: orb-move-2 22s ease-in-out infinite;
+  --animate-orb-3: orb-move-3 26s ease-in-out infinite;
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    33%       { transform: translateY(-18px) rotate(2deg); }
+    66%       { transform: translateY(-8px) rotate(-1deg); }
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+
+  @keyframes slide-down {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes orb-move-1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%       { transform: translate(8%, 12%) scale(1.08); }
+    66%       { transform: translate(-6%, 6%) scale(0.96); }
+  }
+
+  @keyframes orb-move-2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    40%       { transform: translate(-10%, -8%) scale(1.12); }
+    70%       { transform: translate(5%, -4%) scale(0.94); }
+  }
+
+  @keyframes orb-move-3 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50%       { transform: translate(6%, -10%) scale(1.06); }
+  }
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+  }
+
+  /* Scrollbar for dark module */
+  .inv-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  .inv-scroll::-webkit-scrollbar-track {
+    background: #1e293b;
+  }
+  .inv-scroll::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 3px;
+  }
+}
+
+/* ============================================
+   CUSTOM UTILITIES
+   ============================================ */
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  /* Glassmorphism light (for landing) */
+  .glass-light {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+  }
+
+  .sunny-gradient {
+    background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+  }
+
+  .sunny-gradient-text {
+    background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Shimmer gradient text for hero */
+  .shimmer-text {
+    background: linear-gradient(
+      90deg,
+      #f59e0b 0%,
+      #fbbf24 30%,
+      #f97316 50%,
+      #fbbf24 70%,
+      #f59e0b 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: var(--animate-shimmer);
+  }
+
+  /* Animated orbs */
+  .orb-amber {
+    animation: var(--animate-orb-1);
+  }
+  .orb-orange {
+    animation: var(--animate-orb-2);
+  }
+  .orb-yellow {
+    animation: var(--animate-orb-3);
+  }
+
+  /* Float animation */
+  .animate-float {
+    animation: var(--animate-float);
+  }
+  .animate-float-delayed {
+    animation: var(--animate-float-delayed);
+  }
+
+  /* Slide down (mobile menu) */
+  .animate-slide-down {
+    animation: var(--animate-slide-down);
+  }
+
+  .inv-surface {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+  }
+
+  .rack-cell {
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+
+  .rack-cell:hover {
+    transform: scale(1.05);
+    filter: brightness(1.2);
+  }
+
+  /* Category card hover */
+  .category-card {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .category-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px -12px rgba(0,0,0,0.15);
+  }
+
+  /* Sidebar item active glow */
+  .nav-active-glow {
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.25), 0 2px 12px rgba(245, 158, 11, 0.12);
+  }
+}
