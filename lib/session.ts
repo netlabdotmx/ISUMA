@@ -8,6 +8,7 @@ export interface SessionUser {
   uid: number;
   name: string;
   email: string;
+  sessionId?: string;
 }
 
 async function getKey(): Promise<CryptoKey> {
