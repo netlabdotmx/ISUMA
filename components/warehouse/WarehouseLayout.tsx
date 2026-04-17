@@ -195,7 +195,7 @@ export function WarehouseLayout({
                         cellData.isHighlighted
                           ? "ring-2 ring-yellow-400 ring-offset-1 ring-offset-slate-900"
                           : "",
-                        cellData.totalQty > 0
+                        (cellData.totalQty ?? 0) > 0
                           ? "bg-green-900/50 border-green-600/60 text-green-300"
                           : zoneCls,
                         "hover:scale-105 hover:z-10 hover:shadow-lg hover:shadow-black/40",
