@@ -26,16 +26,36 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const locations = await odooCall<OdooLocation[]>(
-      sid,
-      "stock.location",
-      "search_read",
-      [domain],
-      {
-        fields: ["id", "name", "complete_name", "location_id", "usage"],
-        order: "complete_name asc",
-      }
-    );
+    const baseFields = ["id", "name", "complete_name", "location_id", "usage"];
+    const customFields = ["x_physical_rack", "x_physical_column", "x_physical_level", "x_abc_zone"];
+
+    let locations: OdooLocation[];
+
+    try {
+      // Try with custom physical position fields first
+      locations = await odooCall<OdooLocation[]>(
+        sid,
+        "stock.location",
+        "search_read",
+        [domain],
+        {
+          fields: [...baseFields, ...customFields],
+          order: "complete_name asc",
+        }
+      );
+    } catch {
+      // Custom fields don't exist yet — fall back to base fields only
+      locations = await odooCall<OdooLocation[]>(
+        sid,
+        "stock.location",
+        "search_read",
+        [domain],
+        {
+          fields: baseFields,
+          order: "complete_name asc",
+        }
+      );
+    }
 
     return NextResponse.json({ locations });
   } catch (error) {

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { PackageSearch, Plus, Camera, Save, CheckCircle } from "lucide-react";
+import { Save, CheckCircle, AlertTriangle, PackageSearch, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import { MovementLines, type MoveLine } from "@/components/inventory/MovementLines";
+import { BarcodeScanner } from "@/components/inventory/BarcodeScanner";
 
 const PICKING_TYPES = [
   { id: 17, label: "Recepción de Contenedor", locationId: 8, locationDestId: 25 },
@@ -11,22 +13,63 @@ const PICKING_TYPES = [
   { id: 9, label: "Recepción SUCURSAL", locationId: 8, locationDestId: 19 },
 ];
 
-// Vendor location in Odoo is typically id=8 (Partners/Vendors)
-// Adjust if your Odoo instance uses a different ID
-
 export default function RecepcionPage() {
   const router = useRouter();
   const [pickingTypeId, setPickingTypeId] = useState(17);
   const [origin, setOrigin] = useState("");
-  const [scheduledDate, setScheduledDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
   const [lines, setLines] = useState<MoveLine[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [scanLoading, setScanLoading] = useState(false);
+  const [unknownBarcodes, setUnknownBarcodes] = useState<string[]>([]);
 
   const selectedType = PICKING_TYPES.find((t) => t.id === pickingTypeId)!;
+
+  async function handleBarcodeScan(barcode: string) {
+    setScanLoading(true);
+    setError("");
+    try {
+      const res = await fetch(
+        `/api/odoo/products?barcode=${encodeURIComponent(barcode)}&limit=1`
+      );
+      const data = await res.json();
+      const products = data.products ?? [];
+      if (products.length === 0) {
+        setError(`No se encontró producto con código "${barcode}". Usa "Reportar producto nuevo" abajo.`);
+        if (!unknownBarcodes.includes(barcode)) {
+          setUnknownBarcodes((prev) => [...prev, barcode]);
+        }
+        return;
+      }
+      const p = products[0];
+      const existing = lines.find((l) => l.product_id === p.id);
+      if (existing) {
+        setLines(
+          lines.map((l) =>
+            l.id === existing.id
+              ? { ...l, qty_demanded: l.qty_demanded + 1, qty_done: l.qty_done + 1 }
+              : l
+          )
+        );
+      } else {
+        const newLine: MoveLine = {
+          id: `scan-${Date.now()}`,
+          product_id: p.id,
+          product_name: p.name,
+          product_code: p.default_code || p.barcode || "",
+          qty_demanded: 1,
+          qty_done: 1,
+          qty_available: p.qty_available,
+        };
+        setLines([...lines, newLine]);
+      }
+    } catch {
+      setError("Error de conexión al buscar producto");
+    } finally {
+      setScanLoading(false);
+    }
+  }
 
   async function handleSubmit(autoValidate: boolean) {
     if (lines.length === 0) {
@@ -51,7 +94,6 @@ export default function RecepcionPage() {
           origin: origin.trim() || undefined,
           location_id: selectedType.locationId,
           location_dest_id: selectedType.locationDestId,
-          scheduled_date: scheduledDate,
           move_lines: lines.map((l) => ({
             product_id: l.product_id,
             product_qty: l.qty_demanded,
@@ -72,26 +114,23 @@ export default function RecepcionPage() {
 
       setSuccess(
         autoValidate
-          ? `Recepción validada correctamente (ID: ${data.pickingId})`
-          : `Recepción guardada como borrador (ID: ${data.pickingId})`
+          ? `Recepción validada (ID: ${data.pickingId})`
+          : `Borrador guardado (ID: ${data.pickingId})`
       );
-
-      // Redirect after 2 seconds
       setTimeout(() => router.push("/superinventarios/recepcion"), 2000);
-    } catch (e) {
+    } catch {
       setError("Error de conexión. Intenta de nuevo.");
-      console.error(e);
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-5 max-w-2xl mx-auto pb-8">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-slate-100">Recepción de Mercancía</h2>
-        <p className="text-slate-400 text-sm mt-1">
+        <h2 className="text-xl font-bold text-slate-100">Recibir Mercancía</h2>
+        <p className="text-slate-500 text-xs mt-1">
           Registra la entrada de productos al almacén
         </p>
       </div>
@@ -104,114 +143,100 @@ export default function RecepcionPage() {
         </div>
       )}
       {error && (
-        <div className="bg-red-900/30 border border-red-700/50 rounded-xl p-4 text-sm text-red-300">
-          ⚠️ {error}
+        <div className="flex items-start gap-3 bg-red-900/30 border border-red-700/50 rounded-xl p-4 text-sm text-red-300">
+          <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+          <span>{error}</span>
         </div>
       )}
 
-      {/* Form */}
-      <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-6 space-y-5">
-        {/* Step 1: Tipo y referencia */}
-        <div>
-          <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-400 text-xs flex items-center justify-center font-bold">1</span>
-            Tipo de recepción
-          </h3>
-          <div className="grid sm:grid-cols-3 gap-4">
-            <div className="sm:col-span-1">
-              <label className="text-xs text-slate-400 mb-1.5 block">
-                Tipo de operación
-              </label>
-              <select
-                value={pickingTypeId}
-                onChange={(e) => setPickingTypeId(parseInt(e.target.value))}
-                className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-              >
-                {PICKING_TYPES.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="sm:col-span-1">
-              <label className="text-xs text-slate-400 mb-1.5 block">
-                Referencia / Contenedor
-              </label>
-              <input
-                type="text"
-                value={origin}
-                onChange={(e) => setOrigin(e.target.value)}
-                placeholder="Ej. CONT-ABR-2026-001"
-                className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-              />
-            </div>
-            <div className="sm:col-span-1">
-              <label className="text-xs text-slate-400 mb-1.5 block">
-                Fecha de recepción
-              </label>
-              <input
-                type="date"
-                value={scheduledDate}
-                onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-              />
-            </div>
-          </div>
+      {/* Type + Reference — compact top row */}
+      <div className="flex gap-3">
+        <div className="flex-1">
+          <label className="text-[11px] text-slate-500 mb-1 block">Tipo</label>
+          <select
+            value={pickingTypeId}
+            onChange={(e) => setPickingTypeId(parseInt(e.target.value))}
+            className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/50 min-h-[48px]"
+          >
+            {PICKING_TYPES.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.label}
+              </option>
+            ))}
+          </select>
         </div>
-
-        <div className="border-t border-slate-700" />
-
-        {/* Step 2: Productos */}
-        <div>
-          <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-400 text-xs flex items-center justify-center font-bold">2</span>
-            Productos a recibir
-            <button
-              type="button"
-              title="Escáner de código de barras (próximamente)"
-              className="ml-auto flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded-lg transition-colors"
-            >
-              <Camera className="h-3.5 w-3.5" />
-              Escáner
-              <span className="text-slate-600">(próx.)</span>
-            </button>
-          </h3>
-          <MovementLines
-            lines={lines}
-            onChange={setLines}
-            showDone={true}
+        <div className="flex-1">
+          <label className="text-[11px] text-slate-500 mb-1 block">Referencia</label>
+          <input
+            type="text"
+            value={origin}
+            onChange={(e) => setOrigin(e.target.value)}
+            placeholder="CONT-001..."
+            className="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-3 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 min-h-[48px]"
           />
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <button
-          type="button"
-          disabled={saving}
-          onClick={() => handleSubmit(false)}
-          className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-slate-100 font-semibold text-sm px-5 py-2.5 rounded-lg transition-colors disabled:opacity-50"
-        >
-          <Save className="h-4 w-4" />
-          Guardar borrador
-        </button>
+      {/* Scanner */}
+      <BarcodeScanner onScan={handleBarcodeScan} scanning={scanLoading} />
+
+      {/* Lines */}
+      <MovementLines
+        lines={lines}
+        onChange={setLines}
+        showDone={true}
+      />
+
+      {/* Unknown barcodes report */}
+      {unknownBarcodes.length > 0 && (
+        <div className="bg-amber-900/20 border border-amber-700/40 rounded-xl p-4 space-y-2">
+          <h4 className="text-sm font-semibold text-amber-300 flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            Productos no encontrados ({unknownBarcodes.length})
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {unknownBarcodes.map((code) => (
+              <span
+                key={code}
+                className="text-xs font-mono bg-amber-500/10 border border-amber-500/30 text-amber-200 px-2.5 py-1.5 rounded-lg"
+              >
+                {code}
+              </span>
+            ))}
+          </div>
+          <p className="text-[11px] text-amber-400/70">
+            Estos códigos se reportarán al supervisor para dar de alta en Odoo.
+          </p>
+        </div>
+      )}
+
+      {/* Actions — large tappable buttons */}
+      <div className="flex flex-col gap-3 pt-2">
         <button
           type="button"
           disabled={saving}
           onClick={() => handleSubmit(true)}
-          className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold text-sm px-5 py-2.5 rounded-lg transition-colors disabled:opacity-50"
+          className="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-900 font-bold text-sm px-5 py-4 rounded-xl transition-colors disabled:opacity-50 min-h-[52px] active:scale-[0.98]"
         >
           {saving ? (
-            <div className="w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
           ) : (
-            <CheckCircle className="h-4 w-4" />
+            <CheckCircle className="h-5 w-5" />
           )}
           Confirmar Recepción
         </button>
+        <button
+          type="button"
+          disabled={saving}
+          onClick={() => handleSubmit(false)}
+          className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 font-semibold text-sm px-5 py-3 rounded-xl transition-colors disabled:opacity-50 min-h-[48px] active:scale-[0.98]"
+        >
+          <Save className="h-4 w-4" />
+          Guardar borrador
+        </button>
       </div>
 
-      {/* Recent receptions list */}
+      {/* Recent receptions */}
       <RecentReceptions />
     </div>
   );
@@ -223,13 +248,13 @@ function RecentReceptions() {
   >([]);
   const [loading, setLoading] = useState(true);
 
-  useState(() => {
+  useEffect(() => {
     fetch("/api/odoo/pickings?code=incoming&limit=5")
       .then((r) => r.json())
       .then((d) => setPickings(d.pickings ?? []))
       .catch(console.error)
       .finally(() => setLoading(false));
-  });
+  }, []);
 
   const STATE_LABELS: Record<string, string> = {
     draft: "Borrador",
@@ -243,7 +268,7 @@ function RecentReceptions() {
   return (
     <div className="bg-slate-800/60 border border-slate-700 rounded-xl">
       <div className="px-5 py-4 border-b border-slate-700">
-        <h3 className="font-semibold text-slate-100 flex items-center gap-2">
+        <h3 className="font-semibold text-slate-100 flex items-center gap-2 text-sm">
           <PackageSearch className="h-4 w-4 text-amber-400" />
           Recepciones recientes
         </h3>
@@ -258,15 +283,22 @@ function RecentReceptions() {
           </div>
         )}
         {pickings.map((p) => (
-          <div key={p.id} className="flex items-center justify-between px-5 py-3">
+          <Link
+            key={p.id}
+            href={`/superinventarios/traslados/${p.id}`}
+            className="flex items-center justify-between px-5 py-3 min-h-[48px] hover:bg-slate-700/30 transition-colors"
+          >
             <div>
               <p className="text-sm font-mono text-slate-100">{p.name}</p>
               <p className="text-xs text-slate-500">{p.origin || "Sin referencia"}</p>
             </div>
-            <span className="text-xs text-slate-400 bg-slate-700 px-2 py-0.5 rounded-full">
-              {STATE_LABELS[p.state] ?? p.state}
-            </span>
-          </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400 bg-slate-700 px-2 py-0.5 rounded-full">
+                {STATE_LABELS[p.state] ?? p.state}
+              </span>
+              <ChevronRight className="h-4 w-4 text-slate-600" />
+            </div>
+          </Link>
         ))}
       </div>
     </div>

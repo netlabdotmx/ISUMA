@@ -10,8 +10,6 @@ import {
   Layers,
   Minus,
   Square,
-  Settings2,
-  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,14 +23,20 @@ export interface EditorCell {
   label?: string;
   capacity?: number;
   zone?: Zone;
+  locationId?: number | null;
+  locationName?: string;
 }
 
 export type EditorGrid = EditorCell[][];
 
 // ─── Constants ──────────────────────────────────────────────────────────────────
 const STORAGE_KEY = "isuma-warehouse-layout-v1";
-const DEFAULT_ROWS = 14;
-const DEFAULT_COLS = 22;
+const DEFAULT_ROWS = 10;
+const DEFAULT_COLS = 15;
+const MIN_ROWS = 4;
+const MIN_COLS = 4;
+const MAX_ROWS = 30;
+const MAX_COLS = 30;
 const CELL_SIZE = 38; // px
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -59,9 +63,9 @@ function resizeGrid(
 }
 
 function autoLabel(r: number, c: number): string {
-  const letter = String.fromCharCode(65 + Math.floor(r / 3));
-  const num = String(c + 1).padStart(2, "0");
-  return `${letter}${num}`;
+  const rowLabel = String.fromCharCode(65 + (r % 26)); // A, B, C, ...
+  const col = String(c + 1).padStart(2, "0");
+  return `${rowLabel}${col}`;
 }
 
 // ─── Zone styles ───────────────────────────────────────────────────────────────
@@ -124,7 +128,7 @@ export function LayoutEditor() {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed.grid) && parsed.grid.length > 0)
-          return parsed.grid;
+          return parsed.grid as EditorGrid;
       }
     } catch {}
     return makeEmptyGrid(DEFAULT_ROWS, DEFAULT_COLS);
@@ -137,9 +141,6 @@ export function LayoutEditor() {
     col: number;
   } | null>(null);
   const [saveFlash, setSaveFlash] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [rowInput, setRowInput] = useState(String(DEFAULT_ROWS));
-  const [colInput, setColInput] = useState(String(DEFAULT_COLS));
 
   // Odoo locations combobox
   const [odooLocations, setOdooLocations] = useState<{ id: number; name: string; complete_name: string }[]>([]);
@@ -169,6 +170,8 @@ export function LayoutEditor() {
             capacity:
               current.type === "rack" ? current.capacity : 100,
             zone: current.type === "rack" ? current.zone : "none",
+            locationId: current.type === "rack" ? current.locationId ?? null : null,
+            locationName: current.type === "rack" ? current.locationName : "",
           };
           return next;
         }
@@ -227,7 +230,9 @@ export function LayoutEditor() {
     setLocDropdownOpen(false);
     if (!selectedCell) { setLocationQuery(""); return; }
     const cell = grid[selectedCell.row]?.[selectedCell.col];
-    setLocationQuery(cell?.type === "rack" ? (cell.label ?? "") : "");
+    setLocationQuery(
+      cell?.type === "rack" ? (cell.locationName ?? cell.label ?? "") : ""
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCell]);
 
@@ -287,15 +292,6 @@ export function LayoutEditor() {
       next[row][col] = { ...next[row][col], ...patch };
       return next;
     });
-  }
-
-  // ── Resize grid ───────────────────────────────────────────────────────────────
-  function applyResize() {
-    const newR = Math.max(4, Math.min(30, Number(rowInput) || DEFAULT_ROWS));
-    const newC = Math.max(4, Math.min(40, Number(colInput) || DEFAULT_COLS));
-    setGrid((prev) => resizeGrid(prev, newR, newC));
-    setSelectedCell(null);
-    setShowSettings(false);
   }
 
   // ── Stats ─────────────────────────────────────────────────────────────────────
@@ -359,85 +355,10 @@ export function LayoutEditor() {
               </span>{" "}
               uds. cap.
             </span>
-          </div>
-
-          {/* Grid settings */}
-          <div className="relative">
-            <button
-              onClick={() => setShowSettings((v) => !v)}
-              title="Tamaño de cuadrícula"
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all",
-                showSettings
-                  ? "bg-slate-700 text-white"
-                  : "bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700"
-              )}
-            >
-              <Settings2 className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">
-                {rows}×{cols}
-              </span>
-              <ChevronDown
-                className={cn(
-                  "h-3 w-3 transition-transform hidden sm:block",
-                  showSettings && "rotate-180"
-                )}
-              />
-            </button>
-
-            {showSettings && (
-              <div className="absolute right-0 top-full mt-1 z-50 bg-slate-800 border border-slate-700 rounded-xl p-4 w-64 shadow-xl shadow-slate-900/60">
-                <p className="text-xs font-semibold text-slate-300 mb-3">
-                  Tamaño de cuadrícula
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <label className="text-[10px] text-slate-500 mb-1 block">
-                      Filas (máx 30)
-                    </label>
-                    <input
-                      type="number"
-                      min={4}
-                      max={30}
-                      value={rowInput}
-                      onChange={(e) => setRowInput(e.target.value)}
-                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
-                  <span className="text-slate-500 mt-4">×</span>
-                  <div className="flex-1">
-                    <label className="text-[10px] text-slate-500 mb-1 block">
-                      Columnas (máx 40)
-                    </label>
-                    <input
-                      type="number"
-                      min={4}
-                      max={40}
-                      value={colInput}
-                      onChange={(e) => setColInput(e.target.value)}
-                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
-                </div>
-                <p className="text-[10px] text-slate-600 mt-2 mb-3">
-                  Al reducir el tamaño se perderán celdas fuera de los límites.
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={applyResize}
-                    className="flex-1 bg-amber-500 text-slate-900 font-semibold text-xs py-1.5 rounded-lg hover:bg-amber-400 transition-colors"
-                  >
-                    Aplicar
-                  </button>
-                  <button
-                    onClick={() => setShowSettings(false)}
-                    className="flex-1 bg-slate-700 text-slate-300 text-xs py-1.5 rounded-lg hover:bg-slate-600 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            )}
+            <span>
+              <span className="text-slate-300 font-bold">{rows}×{cols}</span>{" "}
+              celdas
+            </span>
           </div>
 
           {/* Save */}
@@ -453,6 +374,54 @@ export function LayoutEditor() {
             <Save className="h-3.5 w-3.5" />
             {saveFlash ? "¡Guardado ✓" : "Guardar"}
           </button>
+
+          {/* Resize */}
+          <div className="flex items-center gap-1 text-[11px] text-slate-400 border-l border-slate-800 pl-2 ml-1">
+            <span className="font-medium">Filas</span>
+            <button
+              onClick={() => {
+                if (rows > MIN_ROWS) {
+                  setGrid((g) => resizeGrid(g, rows - 1, cols));
+                  setSelectedCell(null);
+                }
+              }}
+              disabled={rows <= MIN_ROWS}
+              className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 flex items-center justify-center disabled:opacity-30"
+            >−</button>
+            <span className="font-bold text-slate-300 w-5 text-center">{rows}</span>
+            <button
+              onClick={() => {
+                if (rows < MAX_ROWS) {
+                  setGrid((g) => resizeGrid(g, rows + 1, cols));
+                  setSelectedCell(null);
+                }
+              }}
+              disabled={rows >= MAX_ROWS}
+              className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 flex items-center justify-center disabled:opacity-30"
+            >+</button>
+            <span className="font-medium ml-2">Col</span>
+            <button
+              onClick={() => {
+                if (cols > MIN_COLS) {
+                  setGrid((g) => resizeGrid(g, rows, cols - 1));
+                  setSelectedCell(null);
+                }
+              }}
+              disabled={cols <= MIN_COLS}
+              className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 flex items-center justify-center disabled:opacity-30"
+            >−</button>
+            <span className="font-bold text-slate-300 w-5 text-center">{cols}</span>
+            <button
+              onClick={() => {
+                if (cols < MAX_COLS) {
+                  setGrid((g) => resizeGrid(g, rows, cols + 1));
+                  setSelectedCell(null);
+                }
+              }}
+              disabled={cols >= MAX_COLS}
+              className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 flex items-center justify-center disabled:opacity-30"
+            >+</button>
+          </div>
 
           {/* Clear */}
           <button
@@ -481,7 +450,6 @@ export function LayoutEditor() {
         <div
           className="flex-1 overflow-auto p-4"
           style={{ cursor: tool === "select" ? "default" : "crosshair" }}
-          onClick={() => showSettings && setShowSettings(false)}
         >
           {/* Legend */}
           <div className="flex items-center gap-3 mb-3 flex-wrap">
@@ -607,7 +575,11 @@ export function LayoutEditor() {
                         onChange={(e) => {
                           const v = e.target.value;
                           setLocationQuery(v);
-                          patchSelected({ label: v });
+                          patchSelected({
+                            label: v,
+                            locationName: v,
+                            locationId: null,
+                          });
                           setLocDropdownOpen(true);
                         }}
                         onFocus={() => setLocDropdownOpen(true)}
@@ -628,7 +600,11 @@ export function LayoutEditor() {
                                 key={loc.id}
                                 onMouseDown={(e) => e.preventDefault()}
                                 onClick={() => {
-                                  patchSelected({ label: loc.name });
+                                  patchSelected({
+                                    label: loc.name,
+                                    locationName: loc.name,
+                                    locationId: loc.id,
+                                  });
                                   setLocationQuery(loc.name);
                                   setLocDropdownOpen(false);
                                 }}
@@ -644,6 +620,15 @@ export function LayoutEditor() {
                     </div>
                     {odooLocations.length === 0 && (
                       <p className="text-[10px] text-slate-600 mt-1">Cargando ubicaciones…</p>
+                    )}
+                    {selData.locationId ? (
+                      <p className="text-[10px] text-emerald-400 mt-1">
+                        Vinculada a Odoo ID #{selData.locationId}
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-amber-400 mt-1">
+                        Sin vínculo Odoo explícito
+                      </p>
                     )}
                   </div>
 
@@ -695,8 +680,7 @@ export function LayoutEditor() {
                   {/* Position */}
                   <div className="pt-2 border-t border-slate-800">
                     <p className="text-[10px] text-slate-600">
-                      Fila {selectedCell.row + 1} · Columna{" "}
-                      {selectedCell.col + 1}
+                      Fila {String.fromCharCode(65 + selectedCell.row)} · Columna {selectedCell.col + 1}
                     </p>
                   </div>
                 </>

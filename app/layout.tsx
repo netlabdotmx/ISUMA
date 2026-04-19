@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   },
   description:
     "Comercializadora ISUMA — Importadores y distribuidores de productos Sunny para mascotas: perros, peces, reptiles y más.",
+  viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
 };
 
 export default function RootLayout({

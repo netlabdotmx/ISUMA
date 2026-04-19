@@ -104,6 +104,10 @@ export interface OdooLocation {
   complete_name: string;
   location_id: [number, string] | false;
   usage: string;
+  x_physical_rack?: string | false;
+  x_physical_column?: number | false;
+  x_physical_level?: number | false;
+  x_abc_zone?: string | false;
 }
 
 export interface OdooQuant {
@@ -126,6 +130,8 @@ export interface OdooPicking {
   date_done: string | false;
   create_date: string;
   move_ids: number[];
+  partner_id?: [number, string] | false;
+  priority?: string;
 }
 
 export interface OdooMove {

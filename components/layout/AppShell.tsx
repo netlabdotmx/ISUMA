@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Bell, User, Menu, X } from "lucide-react";
 import { Sidebar } from "@/components/ui/Sidebar";
+import { BottomNav } from "./BottomNav";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -74,10 +75,13 @@ export function AppShell({ children, userName, userEmail }: AppShellProps) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto inv-scroll p-4 sm:p-6">
+        <main className="flex-1 overflow-y-auto inv-scroll p-4 sm:p-6 pb-20 lg:pb-6">
           {children}
         </main>
       </div>
+
+      {/* Mobile bottom navigation */}
+      <BottomNav />
     </div>
   );
 }

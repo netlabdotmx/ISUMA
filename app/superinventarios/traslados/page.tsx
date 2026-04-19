@@ -48,7 +48,12 @@ function formatDate(s: string | false) {
   });
 }
 
-export default async function TrasladosPage() {
+export default async function TrasladosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>;
+}) {
+  const { from } = await searchParams;
   let pickings: Picking[] = [];
   let error = "";
 
@@ -69,7 +74,9 @@ export default async function TrasladosPage() {
           </p>
         </div>
         <Link
-          href="/superinventarios/traslados/nuevo"
+          href={from
+            ? `/superinventarios/traslados/nuevo?from=${encodeURIComponent(from)}`
+            : "/superinventarios/traslados/nuevo"}
           className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold text-sm px-4 py-2.5 rounded-lg transition-colors"
         >
           <Plus className="h-4 w-4" />

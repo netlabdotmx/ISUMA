@@ -148,6 +148,11 @@
     text-wrap: balance;
   }
 
+  /* Safe area for bottom nav on iOS */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
   .glass-card {
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(16px);

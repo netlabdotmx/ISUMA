@@ -52,11 +52,11 @@ export async function GET(request: NextRequest) {
           "id", "name", "state", "picking_type_id",
           "location_id", "location_dest_id",
           "origin", "scheduled_date", "date_done", "create_date",
-          "move_ids",
+          "move_ids", "partner_id", "priority",
         ],
         limit,
         offset,
-        order: "create_date desc",
+        order: searchParams.get("order") || "create_date desc",
       }
     );
 
@@ -109,7 +109,6 @@ export async function POST(request: NextRequest) {
           product_id: line.product_id,
           product_uom_qty: line.product_qty,
           product_uom: 1,
-          name: line.product_name,
           location_id: line.location_id,
           location_dest_id: line.location_dest_id,
         },

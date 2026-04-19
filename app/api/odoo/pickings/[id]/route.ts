@@ -40,7 +40,7 @@ export async function GET(
           "id", "name", "state", "picking_type_id",
           "location_id", "location_dest_id",
           "origin", "scheduled_date", "date_done", "create_date",
-          "move_ids",
+          "move_ids", "partner_id", "priority",
         ],
       }
     );
@@ -92,9 +92,10 @@ export async function POST(
     const sid = await getSessionId();
     const { id } = await params;
     const pickingId = parseInt(id);
-    const { action, move_quantities } = await request.json() as {
-      action: "confirm" | "validate" | "cancel";
+    const { action, move_quantities, return_lines } = await request.json() as {
+      action: "confirm" | "validate" | "cancel" | "return";
       move_quantities?: Record<number, number>;
+      return_lines?: { move_id: number; quantity: number; reason?: string }[];
     };
 
     if (isNaN(pickingId)) {
@@ -123,6 +124,56 @@ export async function POST(
     if (action === "cancel") {
       await odooCall(sid, "stock.picking", "action_cancel", [[pickingId]]);
       return NextResponse.json({ success: true });
+    }
+
+    if (action === "return") {
+      if (!return_lines || return_lines.length === 0) {
+        return NextResponse.json(
+          { error: "Se requieren líneas de devolución" },
+          { status: 400 }
+        );
+      }
+
+      // Create return wizard with active_id context
+      const ctx = { active_id: pickingId, active_ids: [pickingId], active_model: "stock.picking" };
+
+      // First create default values from the wizard
+      const defaults = await odooCall(
+        sid,
+        "stock.return.picking",
+        "default_get",
+        [["return_moves", "picking_id"]],
+        { context: ctx }
+      ) as { return_moves?: [number, number, { move_id: number; quantity: number }][] };
+
+      // Build return moves from user's selection
+      const returnMoves = return_lines.map((l) => [
+        0, 0, { move_id: l.move_id, quantity: l.quantity },
+      ]);
+
+      const wizardId = await odooCall(
+        sid,
+        "stock.return.picking",
+        "create",
+        [{
+          picking_id: pickingId,
+          return_moves: returnMoves,
+        }],
+        { context: ctx }
+      );
+
+      // Execute the return wizard → creates the return picking
+      const result = await odooCall<{ res_id?: number }>(
+        sid,
+        "stock.return.picking",
+        "action_create_returns",
+        [[wizardId]],
+        { context: ctx }
+      );
+
+      // result usually has { res_id: <new_picking_id> }
+      const returnPickingId = result?.res_id;
+      return NextResponse.json({ success: true, return_picking_id: returnPickingId });
     }
 
     return NextResponse.json({ error: "Acción desconocida" }, { status: 400 });

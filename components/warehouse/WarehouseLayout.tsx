@@ -7,15 +7,6 @@ import type { EditorGrid } from "./LayoutEditor";
 
 const STORAGE_KEY = "isuma-warehouse-layout-v1";
 
-// Known location name → ID mapping from Odoo data
-const LOCATION_NAME_MAP: Record<string, number> = {
-  A1B1: 15,
-  A1B2: 13,
-  A1B3: 14,
-  A1B4: 16,
-  A2B1: 17,
-};
-
 const CEDIS_LAYOUT = {
   aisles: [
     { id: "A1", label: "Pasillo A1", bays: ["A1B1", "A1B2", "A1B3", "A1B4"] },
@@ -29,7 +20,8 @@ interface WarehouseLayoutProps {
   quants: OdooQuant[];
   highlightedLocations: number[];
   highlightQuants: OdooQuant[];
-  onLocationClick: (data: RackCellData) => void;
+  /** Called when a rack cell is clicked — passes the cell label and its locationId */
+  onRackClick: (rackLabel: string, locationId: number | null) => void;
 }
 
 function computeABC(quants: OdooQuant[]): Record<number, "A" | "B" | "C"> {
@@ -53,7 +45,7 @@ function computeABC(quants: OdooQuant[]): Record<number, "A" | "B" | "C"> {
   return result;
 }
 
-// Read the editor grid from localStorage (client-side only)
+// Read the editor grid: try localStorage first, then fetch from server
 function loadEditorGrid(): EditorGrid | null {
   if (typeof window === "undefined") return null;
   try {
@@ -66,18 +58,43 @@ function loadEditorGrid(): EditorGrid | null {
   }
 }
 
+async function fetchServerGrid(): Promise<EditorGrid | null> {
+  try {
+    const res = await fetch("/api/odoo/warehouse-layout");
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.grid && Array.isArray(data.grid)) {
+      // Cache to localStorage
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ grid: data.grid }));
+      return data.grid as EditorGrid;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export function WarehouseLayout({
   locations,
   quants,
   highlightedLocations,
   highlightQuants,
-  onLocationClick,
+  onRackClick,
 }: WarehouseLayoutProps) {
-  // Re-read editor grid from localStorage whenever the component renders
+  // Load editor grid: always try server first, cache to localStorage
   const [editorGrid, setEditorGrid] = useState<EditorGrid | null>(null);
 
   useEffect(() => {
-    setEditorGrid(loadEditorGrid());
+    // Always fetch server layout (it's the source of truth)
+    fetchServerGrid().then((serverGrid) => {
+      if (serverGrid) {
+        setEditorGrid(serverGrid);
+      } else {
+        // Fallback to localStorage if server fails
+        const local = loadEditorGrid();
+        if (local) setEditorGrid(local);
+      }
+    });
   }, []);
 
   const abcClassification = useMemo(() => computeABC(quants), [quants]);
@@ -105,6 +122,44 @@ export function WarehouseLayout({
     }
     return idx;
   }, [highlightQuants]);
+
+  // Build set of rack+column keys that have highlighted products
+  // e.g. location "A-19-1" → key "A19", "A1B1" → key "A1"
+  // This maps to aerial cell labels like "A19", "A01", etc.
+  const highlightByRackCol = useMemo(() => {
+    const map: Record<string, number> = {}; // "A19" → total qty
+    for (const q of highlightQuants) {
+      const locId = Array.isArray(q.location_id) ? q.location_id[0] : 0;
+      const loc = locations.find((l) => l.id === locId);
+      if (!loc) continue;
+
+      let key = "";
+
+      // Try physical fields: rack + column
+      if (loc.x_physical_rack && loc.x_physical_column) {
+        const rack = String(loc.x_physical_rack).toUpperCase();
+        const col = String(Number(loc.x_physical_column)).padStart(2, "0");
+        key = `${rack}${col}`;
+      } else {
+        // Parse from name: "A-19-1" → "A19", "A1B1" → "A1"
+        const std = loc.name.match(/^([A-Za-z]+)-?(\d{1,2})-\d$/);
+        if (std) {
+          key = `${std[1].toUpperCase()}${String(parseInt(std[2])).padStart(2, "0")}`;
+        } else {
+          // Legacy: "A1B1" → rack A, col 1
+          const legacy = loc.name.match(/^([A-Za-z])(\d+)B\d+$/i);
+          if (legacy) {
+            key = `${legacy[1].toUpperCase()}${String(parseInt(legacy[2])).padStart(2, "0")}`;
+          }
+        }
+      }
+
+      if (key) {
+        map[key] = (map[key] ?? 0) + q.quantity;
+      }
+    }
+    return map;
+  }, [locations, highlightQuants]);
 
   function buildCellData(label: string, locationId: number | null): RackCellData {
     const locQuants = locationId ? (quantsByLocation[locationId] ?? []) : [];
@@ -138,22 +193,23 @@ export function WarehouseLayout({
       <div className="rounded-xl bg-slate-900 border border-slate-700 overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
           <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
-            Plano del CEDIS — Editor
+            Vista aérea del CEDIS
           </span>
           <span className="text-[11px] text-slate-600">
-            {editorGrid.length} × {editorGrid[0]?.length ?? 0} celdas
+            {editorGrid.length} × {editorGrid[0]?.length ?? 0} celdas ·
+            Haz clic en un rack para ver su vista frontal
           </span>
         </div>
         <div className="p-4 overflow-x-auto">
           <div className="inline-flex flex-col gap-0.5">
             {editorGrid.map((row, r) => (
-              <div key={r} className="flex gap-0.5">
+              <div key={r} className="flex gap-0.5 items-center">
                 {row.map((cell, c) => {
                   if (cell.type === "empty") {
                     return (
                       <div
                         key={c}
-                        className="w-9 h-9 rounded border border-transparent"
+                        className="w-10 h-10 rounded border border-transparent"
                       />
                     );
                   }
@@ -161,10 +217,10 @@ export function WarehouseLayout({
                     return (
                       <div
                         key={c}
-                        className="w-9 h-9 rounded border border-slate-700/40 bg-slate-800/20 flex items-center justify-center"
+                        className="w-10 h-10 rounded border border-slate-700/40 bg-slate-800/20 flex items-center justify-center"
                       >
-                        <span className="text-[9px] text-slate-600 font-bold rotate-90 tracking-widest">
-                          PASILLO
+                        <span className="text-[8px] text-slate-600 font-bold tracking-widest">
+                          ·
                         </span>
                       </div>
                     );
@@ -173,37 +229,59 @@ export function WarehouseLayout({
                     return (
                       <div
                         key={c}
-                        className="w-9 h-9 rounded border border-slate-600 bg-slate-700"
+                        className="w-10 h-10 rounded border border-slate-600 bg-slate-700"
                       />
                     );
                   }
-                  // rack
+                  // rack — aerial view: show label + zone color, click to open frontal
                   const label = cell.label ?? `R${r}${c}`;
                   const zone = cell.zone ?? "none";
-                  const locationId = LOCATION_NAME_MAP[label] ?? null;
+                  const locationId = cell.locationId ?? null;
                   const cellData = buildCellData(label, locationId);
                   const zoneCls = ZONE_BG[zone];
+
+                  // Highlight by rack+column match (e.g. "A19" matches location "A-19-1")
+                  const cellKey = label.toUpperCase(); // e.g. "A03", "E09"
+                  const rackColQty = highlightByRackCol[cellKey] ?? 0;
+                  const isCellHighlighted = rackColQty > 0;
 
                   return (
                     <button
                       key={c}
-                      onClick={() => onLocationClick(cellData)}
-                      title={`${label}${cell.capacity ? ` · Cap: ${cell.capacity}` : ""}`}
+                      onClick={() => onRackClick(label, locationId)}
+                      title={
+                        isCellHighlighted
+                          ? `${label} — ${rackColQty} uds del producto buscado`
+                          : `${label} — Clic para ver rack de frente`
+                      }
                       className={[
-                        "w-9 h-9 rounded border text-[9px] font-bold transition-all duration-150",
-                        "flex items-center justify-center leading-none",
-                        cellData.isHighlighted
-                          ? "ring-2 ring-yellow-400 ring-offset-1 ring-offset-slate-900"
+                        "w-10 h-10 rounded border text-[9px] font-bold transition-all duration-150",
+                        "flex flex-col items-center justify-center leading-none cursor-pointer",
+                        isCellHighlighted
+                          ? "ring-2 ring-yellow-400 ring-offset-1 ring-offset-slate-900 bg-yellow-400/20 border-yellow-400 text-yellow-200 animate-pulse"
+                          : cellData.isHighlighted
+                          ? "ring-2 ring-yellow-400 ring-offset-1 ring-offset-slate-900 animate-pulse"
                           : "",
-                        (cellData.totalQty ?? 0) > 0
+                        !isCellHighlighted && !cellData.isHighlighted && (cellData.totalQty ?? 0) > 0
                           ? "bg-green-900/50 border-green-600/60 text-green-300"
-                          : zoneCls,
-                        "hover:scale-105 hover:z-10 hover:shadow-lg hover:shadow-black/40",
+                          : !isCellHighlighted && !cellData.isHighlighted
+                          ? zoneCls
+                          : "",
+                        "hover:scale-110 hover:z-10 hover:shadow-lg hover:shadow-black/40",
                       ]
                         .filter(Boolean)
                         .join(" ")}
                     >
-                      {label}
+                      <span className="max-w-full truncate">{label}</span>
+                      {isCellHighlighted ? (
+                        <span className="text-[7px] font-semibold text-yellow-300">
+                          {rackColQty}u
+                        </span>
+                      ) : (cellData.totalQty ?? 0) > 0 ? (
+                        <span className="text-[7px] font-semibold opacity-80">
+                          {Math.round(cellData.totalQty ?? 0)}u
+                        </span>
+                      ) : null}
                     </button>
                   );
                 })}
@@ -221,7 +299,7 @@ export function WarehouseLayout({
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded bg-amber-500/20 border border-amber-500/40" />
-              <span className="text-slate-400">Zona A</span>
+              <span className="text-slate-400">Zona A (alta rotación)</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded bg-blue-500/20 border border-blue-500/40" />
@@ -247,7 +325,10 @@ export function WarehouseLayout({
 
   // ── Fallback: hardcoded CEDIS layout ─────────────────────────────────────────
   function buildCellDataByName(bayName: string): RackCellData {
-    const locationId = LOCATION_NAME_MAP[bayName] ?? null;
+    const location = locations.find(
+      (loc) => loc.name === bayName || loc.complete_name.endsWith(`/${bayName}`)
+    );
+    const locationId = location?.id ?? null;
     return buildCellData(bayName, locationId);
   }
 
@@ -282,7 +363,7 @@ export function WarehouseLayout({
                     <RackCell
                       key={bay}
                       data={cellData}
-                      onClick={onLocationClick}
+                      onClick={() => onRackClick(bay, cellData.locationId)}
                     />
                   );
                 })}

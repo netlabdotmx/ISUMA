@@ -1,0 +1,762 @@
+{
+  "grid": [
+    [
+      {
+        "type": "rack",
+        "label": "A01",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A02",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A03",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A04",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A05",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A06",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A07",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A08",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A09",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A10",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A11",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A12",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A13",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A14",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A15",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A16",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A17",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A18",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A19",
+        "zone": "A"
+      },
+      {
+        "type": "rack",
+        "label": "A20",
+        "zone": "A"
+      }
+    ],
+    [
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      }
+    ],
+    [
+      {
+        "type": "rack",
+        "label": "B01",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B02",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B03",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B04",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B05",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B06",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B07",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B08",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B09",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B10",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B11",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B12",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B13",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B14",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B15",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B16",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B17",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B18",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B19",
+        "zone": "B"
+      },
+      {
+        "type": "rack",
+        "label": "B20",
+        "zone": "B"
+      }
+    ],
+    [
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      }
+    ],
+    [
+      {
+        "type": "rack",
+        "label": "C01",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C02",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C03",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C04",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C05",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C06",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C07",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C08",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C09",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C10",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C11",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C12",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C13",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C14",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C15",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C16",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C17",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C18",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C19",
+        "zone": "C"
+      },
+      {
+        "type": "rack",
+        "label": "C20",
+        "zone": "C"
+      }
+    ],
+    [
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      }
+    ],
+    [
+      {
+        "type": "rack",
+        "label": "D01",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D02",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D03",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D04",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D05",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D06",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D07",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D08",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D09",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D10",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D11",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D12",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D13",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D14",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D15",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D16",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D17",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D18",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D19",
+        "zone": "D"
+      },
+      {
+        "type": "rack",
+        "label": "D20",
+        "zone": "D"
+      }
+    ],
+    [
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      },
+      {
+        "type": "aisle"
+      }
+    ],
+    [
+      {
+        "type": "rack",
+        "label": "E01",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E02",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E03",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E04",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E05",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E06",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E07",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E08",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E09",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E10",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E11",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E12",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E13",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E14",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E15",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E16",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E17",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E18",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E19",
+        "zone": "none"
+      },
+      {
+        "type": "rack",
+        "label": "E20",
+        "zone": "none"
+      }
+    ]
+  ]
+}

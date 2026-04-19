@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { COOKIE_NAME, parseSession } from "@/lib/session";
 
 const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/auth/logout"];
-const PROTECTED_PREFIX = "/superinventarios";
+const PROTECTED_PREFIXES = ["/superinventarios", "/admin"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Only protect /superinventarios/* routes
-  if (!pathname.startsWith(PROTECTED_PREFIX)) {
+  // Only protect /superinventarios/* and /admin/* routes
+  if (!PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
@@ -26,5 +26,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/superinventarios/:path*"],
+  matcher: ["/superinventarios/:path*", "/admin/:path*"],
 };

@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
-  Map,
+  ClipboardList,
   PackageSearch,
   ArrowRightLeft,
+  ClipboardCheck,
+  Search,
+  RotateCcw,
   Sun,
   ChevronRight,
   ArrowLeft,
@@ -16,25 +18,34 @@ import { LogoutButton } from "./LogoutButton";
 
 const navItems = [
   {
-    label: "Dashboard",
-    href: "/superinventarios",
-    icon: LayoutDashboard,
-    exact: true,
+    label: "Surtir",
+    href: "/superinventarios/surtir",
+    icon: ClipboardList,
   },
   {
-    label: "Layout Almacén",
-    href: "/superinventarios/layout",
-    icon: Map,
-  },
-  {
-    label: "Recepción",
+    label: "Recibir",
     href: "/superinventarios/recepcion",
     icon: PackageSearch,
   },
   {
-    label: "Traslados",
+    label: "Mover",
     href: "/superinventarios/traslados",
     icon: ArrowRightLeft,
+  },
+  {
+    label: "Contar",
+    href: "/superinventarios/contar",
+    icon: ClipboardCheck,
+  },
+  {
+    label: "Devolver",
+    href: "/superinventarios/devoluciones",
+    icon: RotateCcw,
+  },
+  {
+    label: "Buscar",
+    href: "/superinventarios/buscar",
+    icon: Search,
   },
 ];
 
@@ -47,8 +58,7 @@ interface SidebarProps {
 export function Sidebar({ userName = "Usuario", userEmail, onNavClick }: SidebarProps) {
   const pathname = usePathname();
 
-  function isActive(href: string, exact?: boolean) {
-    if (exact) return pathname === href;
+  function isActive(href: string) {
     return pathname.startsWith(href);
   }
 
@@ -72,7 +82,7 @@ export function Sidebar({ userName = "Usuario", userEmail, onNavClick }: Sidebar
           Menú
         </p>
         {navItems.map((item) => {
-          const active = isActive(item.href, item.exact);
+          const active = isActive(item.href);
           return (
             <Link
               key={item.href}
