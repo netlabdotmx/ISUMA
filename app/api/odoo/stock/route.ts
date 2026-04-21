@@ -32,29 +32,7 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    // Batch-fetch product codes for all unique product IDs
-    const productIds = [...new Set(quants.map((q) => (Array.isArray(q.product_id) ? q.product_id[0] : 0)).filter(Boolean))];
-    let productCodes: Record<number, string> = {};
-
-    if (productIds.length > 0) {
-      try {
-        const products = await odooCall<{ id: number; default_code: string | false; x_sku?: string | false }[]>(
-          sid,
-          "product.product",
-          "search_read",
-          [[["id", "in", productIds]]],
-          { fields: ["id", "default_code"] }
-        );
-        for (const p of products) {
-          const code = (p.default_code || "") as string;
-          if (code) productCodes[p.id] = code;
-        }
-      } catch {
-        // If fetching product codes fails, continue without them
-      }
-    }
-
-    return NextResponse.json({ quants, productCodes });
+    return NextResponse.json({ quants });
   } catch (error) {
     console.error("[API /odoo/stock]", error);
     return NextResponse.json(
