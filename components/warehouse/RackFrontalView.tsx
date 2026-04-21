@@ -9,6 +9,7 @@ import {
   POSITIONS,
   parseCircuitLocation,
   buildCircuitLocationName,
+  isManeuveringCell,
   type Circuit,
 } from "@/lib/circuits";
 import { cn } from "@/lib/utils";
@@ -263,7 +264,30 @@ export function RackFrontalView({
                 )}
               >
                 {/* Position 1 (left) */}
-                {row.map((cell, cellIdx) => (
+                {row.map((cell, cellIdx) => {
+                  const isManeuvering = isManeuveringCell(circuit, rackNumber, cell.level);
+
+                  if (isManeuvering) {
+                    return (
+                      <div
+                        key={cell.position}
+                        className={cn(
+                          "flex-1 aspect-[4/3] min-h-[72px] relative",
+                          "flex flex-col items-center justify-center gap-1",
+                          "bg-blue-900/15 border-blue-500/10",
+                          cellIdx > 0 && "border-l-2 border-slate-600",
+                        )}
+                      >
+                        <span className="text-lg text-blue-500/30">↺</span>
+                        <span className="text-[8px] text-blue-400/40 font-medium">Maniobra</span>
+                        <span className="absolute bottom-1 right-1.5 text-[7px] text-slate-600 font-mono">
+                          {cell.position}
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  return (
                   <button
                     key={cell.position}
                     onClick={() => setSelectedCell(cell)}
@@ -314,7 +338,8 @@ export function RackFrontalView({
                       {cell.position}
                     </span>
                   </button>
-                ))}
+                  );
+                })}
 
                 {/* Level label (right side) */}
                 <div

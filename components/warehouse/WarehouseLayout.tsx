@@ -7,6 +7,7 @@ import {
   CIRCUIT_BY_ID,
   buildAerialColumns,
   parseCircuitLocation,
+  hasManeuveringAtRack,
   type Circuit,
 } from "@/lib/circuits";
 import { cn } from "@/lib/utils";
@@ -271,15 +272,11 @@ export function WarehouseLayout({
                   // Rack cell
                   const circuit = col.circuitId ? CIRCUIT_BY_ID[col.circuitId] : null;
                   if (!circuit || rackNum > circuit.rackCount) {
-                    // This rack section doesn't exist (e.g. rack 10 for 9-rack circuits = back maneuvering)
                     return (
                       <div
                         key={`c-${colIdx}`}
-                        className="w-10 h-8 shrink-0 rounded-sm m-px bg-blue-900/20 border border-blue-500/10 flex items-center justify-center"
-                        title={`${circuit?.name ?? ""} — Maniobra`}
-                      >
-                        <span className="text-[6px] text-blue-500/40">↺</span>
-                      </div>
+                        className="w-10 h-8 shrink-0 rounded-sm m-px bg-slate-900/50 border border-slate-800/30"
+                      />
                     );
                   }
 
@@ -292,18 +289,18 @@ export function WarehouseLayout({
                     text: "text-slate-400",
                   };
 
-                  // Simple fill level: are there quants in this circuit at this rack position?
                   const hasStock = (stats?.totalQty ?? 0) > 0;
                   const isHighlighted = hlQty > 0;
                   const isFocused = focusedCircuit === cId;
+                  const isPartialManeuvering = hasManeuveringAtRack(circuit, rackNum);
 
                   return (
                     <button
                       key={`c-${colIdx}`}
                       onClick={() => onRackClick(cId, rackNum)}
-                      title={`Pasillo ${circuit.name} — Rack ${rackNum}`}
+                      title={`Pasillo ${circuit.name} — Rack ${rackNum}${isPartialManeuvering ? " (maniobra nivel A)" : ""}`}
                       className={cn(
-                        "w-10 h-8 shrink-0 rounded-sm m-px border text-[8px] font-bold",
+                        "w-10 h-8 shrink-0 rounded-sm m-px border text-[8px] font-bold relative",
                         "flex items-center justify-center transition-all duration-150",
                         "cursor-pointer hover:scale-110 hover:z-10 hover:shadow-lg hover:shadow-black/40",
                         isFocused
@@ -312,12 +309,17 @@ export function WarehouseLayout({
                             ? "ring-2 ring-yellow-400 ring-offset-1 ring-offset-slate-900 bg-yellow-400/25 border-yellow-400 text-yellow-200 animate-pulse"
                             : focusedCircuit && !isFocused
                               ? "opacity-20 border-slate-700/30"
-                              : hasStock
-                                ? `bg-green-900/40 border-green-600/40 text-green-300`
-                                : `${colors.bg} ${colors.border} ${colors.text}`
+                              : isPartialManeuvering
+                                ? "bg-gradient-to-t from-blue-900/30 to-transparent border-blue-500/20 text-blue-300/70"
+                                : hasStock
+                                  ? `bg-green-900/40 border-green-600/40 text-green-300`
+                                  : `${colors.bg} ${colors.border} ${colors.text}`
                       )}
                     >
                       {rackNum}
+                      {isPartialManeuvering && (
+                        <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 text-[5px] text-blue-400/50">↺</span>
+                      )}
                     </button>
                   );
                 })}
@@ -355,8 +357,8 @@ export function WarehouseLayout({
             <span className="text-slate-400">Producto buscado</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-blue-900/20 border border-blue-500/10" />
-            <span className="text-slate-400">Maniobra</span>
+            <div className="w-3 h-3 rounded bg-gradient-to-t from-blue-900/40 to-transparent border border-blue-500/20" />
+            <span className="text-slate-400">Maniobra parcial (nivel A)</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded bg-slate-700 border border-slate-600" />
