@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { OdooLocation, OdooQuant } from "@/lib/odoo";
 import {
   CIRCUITS,
@@ -159,6 +159,7 @@ export function WarehouseLayout({
   highlightQuants,
   onRackClick,
 }: WarehouseLayoutProps) {
+  const [focusedCircuit, setFocusedCircuit] = useState<string | null>(null);
   const aerialCols = useMemo(() => buildAerialColumns(), []);
 
   const circuitStats = useMemo(
@@ -302,6 +303,7 @@ export function WarehouseLayout({
                   // Simple fill level: are there quants in this circuit at this rack position?
                   const hasStock = (stats?.totalQty ?? 0) > 0;
                   const isHighlighted = hlQty > 0;
+                  const isFocused = focusedCircuit === cId;
 
                   return (
                     <button
@@ -312,11 +314,15 @@ export function WarehouseLayout({
                         "w-10 h-8 shrink-0 rounded-sm m-px border text-[8px] font-bold",
                         "flex items-center justify-center transition-all duration-150",
                         "cursor-pointer hover:scale-110 hover:z-10 hover:shadow-lg hover:shadow-black/40",
-                        isHighlighted
-                          ? "ring-2 ring-yellow-400 ring-offset-1 ring-offset-slate-900 bg-yellow-400/25 border-yellow-400 text-yellow-200 animate-pulse"
-                          : hasStock
-                            ? `bg-green-900/40 border-green-600/40 text-green-300`
-                            : `${colors.bg} ${colors.border} ${colors.text}`
+                        isFocused
+                          ? "ring-2 ring-white/70 ring-offset-1 ring-offset-slate-900 bg-white/15 border-white/50 text-white scale-105 z-10"
+                          : isHighlighted
+                            ? "ring-2 ring-yellow-400 ring-offset-1 ring-offset-slate-900 bg-yellow-400/25 border-yellow-400 text-yellow-200 animate-pulse"
+                            : focusedCircuit && !isFocused
+                              ? "opacity-20 border-slate-700/30"
+                              : hasStock
+                                ? `bg-green-900/40 border-green-600/40 text-green-300`
+                                : `${colors.bg} ${colors.border} ${colors.text}`
                       )}
                     >
                       {rackNum}
@@ -380,12 +386,14 @@ export function WarehouseLayout({
             return (
               <button
                 key={c.id}
-                onClick={() => onRackClick(c.id, 1)}
+                onClick={() => setFocusedCircuit(focusedCircuit === c.id ? null : c.id)}
                 className={cn(
                   "rounded-lg border px-2 py-1.5 text-left transition-all hover:scale-105 active:scale-95",
-                  hlQty > 0
-                    ? "border-yellow-400 bg-yellow-400/15"
-                    : `${colors?.border ?? "border-slate-700"} ${colors?.bg ?? "bg-slate-800/40"}`
+                  focusedCircuit === c.id
+                    ? "ring-2 ring-white/70 ring-offset-1 ring-offset-slate-900 border-white/50 bg-white/10"
+                    : hlQty > 0
+                      ? "border-yellow-400 bg-yellow-400/15"
+                      : `${colors?.border ?? "border-slate-700"} ${colors?.bg ?? "bg-slate-800/40"}`
                 )}
               >
                 <p
