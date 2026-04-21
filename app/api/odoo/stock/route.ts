@@ -37,16 +37,20 @@ export async function GET(request: NextRequest) {
     let productCodes: Record<number, string> = {};
 
     if (productIds.length > 0) {
-      const products = await odooCall<{ id: number; default_code: string | false; x_sku: string | false }[]>(
-        sid,
-        "product.product",
-        "search_read",
-        [[["id", "in", productIds]]],
-        { fields: ["id", "default_code", "x_sku"] }
-      );
-      for (const p of products) {
-        const code = (p.x_sku || p.default_code || "") as string;
-        if (code) productCodes[p.id] = code;
+      try {
+        const products = await odooCall<{ id: number; default_code: string | false; x_sku?: string | false }[]>(
+          sid,
+          "product.product",
+          "search_read",
+          [[["id", "in", productIds]]],
+          { fields: ["id", "default_code"] }
+        );
+        for (const p of products) {
+          const code = (p.default_code || "") as string;
+          if (code) productCodes[p.id] = code;
+        }
+      } catch {
+        // If fetching product codes fails, continue without them
       }
     }
 
