@@ -60,24 +60,27 @@ function buildCircuitStats(
   return result;
 }
 
-/** Build per-circuit highlight totals */
+/** Build per-circuit + per-rack highlight totals */
 function buildCircuitHighlights(
   locations: OdooLocation[],
   highlightQuants: OdooQuant[]
-): Record<string, number> {
-  const map: Record<string, number> = {};
+): { byCircuit: Record<string, number>; byRack: Record<string, number> } {
+  const byCircuit: Record<string, number> = {};
+  const byRack: Record<string, number> = {};
   for (const q of highlightQuants) {
     if (q.quantity <= 0) continue;
     const locId = Array.isArray(q.location_id) ? q.location_id[0] : 0;
     const loc = locations.find((l) => l.id === locId);
     if (!loc) continue;
 
-    const circuit = resolveCircuit(loc);
-    if (!circuit) continue;
+    const parsed = parseCircuitLocation(loc.name);
+    if (!parsed) continue;
 
-    map[circuit.id] = (map[circuit.id] ?? 0) + q.quantity;
+    byCircuit[parsed.circuitId] = (byCircuit[parsed.circuitId] ?? 0) + q.quantity;
+    const rackKey = `${parsed.circuitId}:${parsed.rack}`;
+    byRack[rackKey] = (byRack[rackKey] ?? 0) + q.quantity;
   }
-  return map;
+  return { byCircuit, byRack };
 }
 
 /** Resolve an Odoo location to its circuit */
@@ -160,7 +163,7 @@ export function WarehouseLayout({
     [locations, quants]
   );
 
-  const circuitHighlights = useMemo(
+  const { byCircuit: circuitHighlights, byRack: rackHighlights } = useMemo(
     () => buildCircuitHighlights(locations, highlightQuants),
     [locations, highlightQuants]
   );
@@ -209,7 +212,7 @@ export function WarehouseLayout({
               }
               // rack column
               const circuit = col.circuitId ? CIRCUIT_BY_ID[col.circuitId] : null;
-              const hlQty = col.circuitId ? (circuitHighlights[col.circuitId] ?? 0) : 0;
+              const hlQty = col.circuitId ? (circuitHighlights[col.circuitId] ?? 0) : 0;  // header uses circuit-level total
               return (
                 <div
                   key={`h-${i}`}
@@ -282,7 +285,7 @@ export function WarehouseLayout({
 
                   const cId = col.circuitId!;
                   const stats = circuitStats[cId];
-                  const hlQty = circuitHighlights[cId] ?? 0;
+                  const hlQty = rackHighlights[`${cId}:${rackNum}`] ?? 0;
                   const colors = PAIR_COLORS[cId] ?? {
                     bg: "bg-slate-700/50",
                     border: "border-slate-600",
