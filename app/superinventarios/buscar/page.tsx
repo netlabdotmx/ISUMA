@@ -14,7 +14,8 @@ interface SelectedProduct {
 }
 
 interface SelectedRack {
-  rackId: string; // Rack letter, e.g. "A"
+  circuitId: string;
+  rackNumber: number;
 }
 
 export default function BuscarPage() {
@@ -74,10 +75,8 @@ export default function BuscarPage() {
     setHighlightQuants([]);
   }
 
-  function handleRackClick(rackLabel: string, _locationId: number | null) {
-    // Extract rack letter from labels like "A03", "B12", "C"
-    const rackId = rackLabel.replace(/[^A-Za-z]/g, "").toUpperCase() || rackLabel;
-    setSelectedRack({ rackId });
+  function handleRackClick(circuitId: string, rackNumber: number) {
+    setSelectedRack({ circuitId, rackNumber });
   }
 
   return (
@@ -88,7 +87,7 @@ export default function BuscarPage() {
           <h2 className="text-xl font-bold text-slate-100">Buscar en Almacén</h2>
           <p className="text-slate-500 text-xs mt-1">
             {selectedRack
-              ? `Vista frontal: Rack ${selectedRack.rackId}`
+              ? `Vista frontal: ${selectedRack.circuitId} — Rack ${selectedRack.rackNumber}`
               : "Busca un producto y localízalo en el mapa"}
           </p>
         </div>
@@ -201,12 +200,14 @@ export default function BuscarPage() {
 
       {!loading && selectedRack && (
         <RackFrontalView
-          rackId={selectedRack.rackId}
+          circuitId={selectedRack.circuitId}
+          rackNumber={selectedRack.rackNumber}
           locations={locations}
           quants={allQuants}
           highlightedLocations={highlightedLocations}
           highlightQuants={highlightQuants}
           onBack={() => setSelectedRack(null)}
+          onNavigateRack={(rn) => setSelectedRack({ ...selectedRack, rackNumber: rn })}
         />
       )}
     </div>

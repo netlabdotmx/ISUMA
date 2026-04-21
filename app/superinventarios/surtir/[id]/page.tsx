@@ -72,7 +72,7 @@ export default function SurtirDetailPage({
 
   /* ── map overlay state ── */
   const [showMap, setShowMap] = useState(false);
-  const [mapRack, setMapRack] = useState<string | null>(null);
+  const [mapRack, setMapRack] = useState<{ circuitId: string; rackNumber: number } | null>(null);
   const [locations, setLocations] = useState<OdooLocation[]>([]);
   const [allQuants, setAllQuants] = useState<OdooQuant[]>([]);
   const [productQuants, setProductQuants] = useState<OdooQuant[]>([]);
@@ -293,9 +293,8 @@ export default function SurtirDetailPage({
     setMapRack(null);
   }, []);
 
-  const handleMapRackClick = useCallback((rackLabel: string) => {
-    const rackId = rackLabel.replace(/[^A-Za-z]/g, "").toUpperCase() || rackLabel;
-    setMapRack(rackId);
+  const handleMapRackClick = useCallback((circuitId: string, rackNumber: number) => {
+    setMapRack({ circuitId, rackNumber });
   }, []);
 
   /* ── validate picking ── */
@@ -617,7 +616,7 @@ export default function SurtirDetailPage({
             </button>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-slate-100">
-                {mapRack ? `Rack ${mapRack}` : "Mapa del Almacén"}
+                {mapRack ? `${mapRack.circuitId.toUpperCase()} ${mapRack.rackNumber}` : "Mapa del Almacén"}
               </p>
               <p className="text-[11px] text-amber-400 truncate">
                 {current.product_id[1]}
@@ -643,12 +642,14 @@ export default function SurtirDetailPage({
               />
             ) : (
               <RackFrontalView
-                rackId={mapRack}
+                circuitId={mapRack.circuitId}
+                rackNumber={mapRack.rackNumber}
                 locations={locations}
                 quants={allQuants}
                 highlightedLocations={highlightLocIds}
                 highlightQuants={productQuants}
                 onBack={() => setMapRack(null)}
+                onNavigateRack={(rn) => setMapRack({ ...mapRack, rackNumber: rn })}
               />
             )}
           </div>
