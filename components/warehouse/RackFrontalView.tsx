@@ -325,9 +325,15 @@ export function RackFrontalView({
                         <span className="text-sm font-bold text-green-300">
                           {Math.round(cell.totalQty)}
                         </span>
-                        <span className="text-[8px] text-green-400/50">
-                          {cell.products.length} SKU
-                        </span>
+                        {cell.products.length === 1 ? (
+                          <span className="text-[7px] text-green-400/60 text-center leading-tight line-clamp-2 px-1 max-w-full">
+                            {cell.products[0].name}
+                          </span>
+                        ) : (
+                          <span className="text-[8px] text-green-400/50">
+                            {cell.products.length} SKUs
+                          </span>
+                        )}
                       </>
                     ) : (
                       <span className="text-xs text-slate-600">—</span>
