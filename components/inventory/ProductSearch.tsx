@@ -8,6 +8,7 @@ interface Product {
   id: number;
   name: string;
   default_code: string | false;
+  x_sku: string | false;
   qty_available: number;
 }
 
@@ -124,6 +125,9 @@ export function ProductSearch({
                 {product.name}
               </div>
               <div className="text-xs text-slate-400 flex gap-2 mt-0.5">
+                {product.x_sku && (
+                  <span className="font-mono text-amber-400">{product.x_sku}</span>
+                )}
                 {product.default_code && (
                   <span className="font-mono">{product.default_code}</span>
                 )}

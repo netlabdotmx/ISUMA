@@ -5,7 +5,6 @@ import { ChevronLeft, ChevronRight, MapPin, Package, X } from "lucide-react";
 import type { OdooLocation, OdooQuant } from "@/lib/odoo";
 import {
   CIRCUIT_BY_ID,
-  CIRCUITS,
   LEVELS,
   POSITIONS,
   parseCircuitLocation,
@@ -48,29 +47,17 @@ function resolveLocation(
   loc: OdooLocation,
   circuit: Circuit
 ): { rack: number; level: string; position: number } | null {
-  // New format: "Husky 3-C1" or "Husky 3-C2" or legacy "Husky 3-C"
+  // New format: "G 3-C1" or "G 3-C2" or legacy "G 3-C"
   const parsed = parseCircuitLocation(loc.name);
   if (parsed && parsed.circuitId === circuit.id) {
     return { rack: parsed.rack, level: parsed.level, position: parsed.position ?? 1 };
   }
 
-  // Old format: x_physical_rack + x_physical_column + x_physical_level
-  if (loc.x_physical_rack) {
-    const rackLetter = String(loc.x_physical_rack).toUpperCase();
-    if (rackLetter === circuit.oldAisle) {
-      const col = Number(loc.x_physical_column ?? 0);
-      const lvl = Number(loc.x_physical_level ?? 1);
-      if (col > 0 && lvl > 0 && lvl <= 5) {
-        return { rack: col, level: LEVELS[lvl - 1], position: 1 };
-      }
-    }
-  }
-
-  // Old name format: "A-03-2" → aisle A, column 3, level 2
+  // Legacy format: "A-03-2" → aisle A, column 3, level 2
   const oldMatch = loc.name.match(/^([A-Z]{1,2})-(\d+)-(\d+)$/i);
   if (oldMatch) {
-    const aisle = oldMatch[1].toUpperCase();
-    if (aisle === circuit.oldAisle) {
+    const aisle = oldMatch[1].toLowerCase();
+    if (aisle === circuit.id) {
       const col = parseInt(oldMatch[2]);
       const lvl = parseInt(oldMatch[3]);
       if (col > 0 && lvl > 0 && lvl <= 5) {
@@ -108,9 +95,7 @@ export function RackFrontalView({
 
   // Resolve circuit
   const circuit = useMemo(() => {
-    const c = CIRCUIT_BY_ID[circuitId];
-    if (c) return c;
-    return CIRCUITS.find((ci) => ci.oldAisle === circuitId.toUpperCase()) ?? null;
+    return CIRCUIT_BY_ID[circuitId] ?? null;
   }, [circuitId]);
 
   // Build 2×5 grid for this specific rack
@@ -214,10 +199,10 @@ export function RackFrontalView({
           </button>
           <div className="flex-1 min-w-0 text-center">
             <h3 className="text-lg font-black text-slate-100 tracking-tight">
-              {circuit.name.toUpperCase()} {rackNumber}
+              PASILLO {circuit.name} — RACK {rackNumber}
             </h3>
             <p className="text-[11px] text-slate-500">
-              {circuit.icon} Pasillo {circuit.oldAisle} · Zona {circuit.zone}
+              Zona {circuit.zone}
               {paired && ` · Espalda con ${paired.name}`}
             </p>
           </div>

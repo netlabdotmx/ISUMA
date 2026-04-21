@@ -81,23 +81,15 @@ function buildCircuitHighlights(
 
 /** Resolve an Odoo location to its circuit */
 function resolveCircuit(loc: OdooLocation): Circuit | null {
-  // Try circuit-based name: "Husky 3-C"
+  // New format: "G 3-C1"
   const parsed = parseCircuitLocation(loc.name);
   if (parsed) return CIRCUIT_BY_ID[parsed.circuitId] ?? null;
 
-  // Try x_physical_rack field (old aisle letter)
-  if (loc.x_physical_rack) {
-    const rack = String(loc.x_physical_rack).toUpperCase();
-    const circuit = CIRCUITS.find((c) => c.oldAisle === rack);
-    if (circuit) return circuit;
-  }
-
-  // Try parsing old-style name "A-03-2" → aisle A
+  // Legacy format: "A-03-2" → aisle A
   const oldMatch = loc.name.match(/^([A-Z]{1,2})-\d+-\d+$/i);
   if (oldMatch) {
-    const aisle = oldMatch[1].toUpperCase();
-    const circuit = CIRCUITS.find((c) => c.oldAisle === aisle);
-    if (circuit) return circuit;
+    const aisle = oldMatch[1].toLowerCase();
+    return CIRCUIT_BY_ID[aisle] ?? null;
   }
 
   return null;
@@ -232,7 +224,7 @@ export function WarehouseLayout({
                     {circuit?.name ?? ""}
                   </span>
                   <span className="text-[6px] text-slate-600 leading-none mt-0.5">
-                    {circuit?.oldAisle ?? ""}
+                    Zona {circuit?.zone ?? ""}
                   </span>
                 </div>
               );
@@ -309,7 +301,7 @@ export function WarehouseLayout({
                     <button
                       key={`c-${colIdx}`}
                       onClick={() => onRackClick(cId, rackNum)}
-                      title={`${circuit.name} (${circuit.oldAisle}) — Rack ${rackNum}`}
+                      title={`Pasillo ${circuit.name} — Rack ${rackNum}`}
                       className={cn(
                         "w-10 h-8 shrink-0 rounded-sm m-px border text-[8px] font-bold",
                         "flex items-center justify-center transition-all duration-150",
@@ -405,7 +397,7 @@ export function WarehouseLayout({
                   {c.name}
                 </p>
                 <p className="text-[8px] text-slate-600 mt-0.5">
-                  {c.oldAisle} · {stats?.totalQty ? `${Math.round(stats.totalQty)}u` : "vacío"}
+                  {stats?.totalQty ? `${Math.round(stats.totalQty)}u` : "vacío"}
                   {hlQty > 0 && (
                     <span className="text-yellow-400 ml-1">★{hlQty}</span>
                   )}

@@ -94,6 +94,7 @@ export interface OdooProduct {
   id: number;
   name: string;
   default_code: string | false;
+  x_sku: string | false;
   qty_available: number;
   type: string;
 }

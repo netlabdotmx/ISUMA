@@ -30,9 +30,11 @@ export async function GET(request: NextRequest) {
       domain = [
         "|",
         "|",
+        "|",
         ["name", "ilike", search],
         ["default_code", "ilike", search],
         ["barcode", "ilike", search],
+        ["x_sku", "ilike", search],
         ["type", "in", ["consu", "product"]],
       ];
     } else {
@@ -45,7 +47,7 @@ export async function GET(request: NextRequest) {
       "search_read",
       [domain],
       {
-        fields: ["id", "name", "default_code", "barcode", "qty_available", "type"],
+        fields: ["id", "name", "default_code", "barcode", "x_sku", "qty_available", "type"],
         limit,
         offset,
         order: "name asc",
