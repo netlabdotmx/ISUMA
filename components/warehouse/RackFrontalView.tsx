@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 // ─── Props ───────────────────────────────────────────────────────────────────
 
 interface RackFrontalViewProps {
-  /** Circuit ID, e.g. "husky" */
+  /** Circuit ID, e.g. "g" */
   circuitId: string;
   /** Rack number within the circuit (1-based) */
   rackNumber: number;
@@ -25,9 +25,11 @@ interface RackFrontalViewProps {
   quants: OdooQuant[];
   highlightedLocations: number[];
   highlightQuants: OdooQuant[];
+  /** Map product_id → SKU code (x_sku or default_code) */
+  productCodes?: Record<number, string>;
   onBack: () => void;
   /** Navigate to another rack within the same circuit */
-  onNavigateRack?: (rackNumber: number) => void;
+  onNavigateRack?: (rackNumber: number)=> void;
 }
 
 interface CellData {
@@ -89,6 +91,7 @@ export function RackFrontalView({
   quants,
   highlightedLocations,
   highlightQuants,
+  productCodes = {},
   onBack,
   onNavigateRack,
 }: RackFrontalViewProps) {
@@ -327,7 +330,7 @@ export function RackFrontalView({
                         </span>
                         {cell.products.length === 1 ? (
                           <span className="text-[7px] text-green-400/60 text-center leading-tight line-clamp-2 px-1 max-w-full">
-                            {cell.products[0].name}
+                            {productCodes[cell.products[0].id] || cell.products[0].name}
                           </span>
                         ) : (
                           <span className="text-[8px] text-green-400/50">

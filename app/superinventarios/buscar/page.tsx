@@ -24,6 +24,7 @@ export default function BuscarPage() {
   const [selectedProduct, setSelectedProduct] = useState<SelectedProduct | null>(null);
   const [highlightedLocations, setHighlightedLocations] = useState<number[]>([]);
   const [highlightQuants, setHighlightQuants] = useState<OdooQuant[]>([]);
+  const [productCodes, setProductCodes] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(false);
   const [selectedRack, setSelectedRack] = useState<SelectedRack | null>(null);
 
@@ -41,6 +42,7 @@ export default function BuscarPage() {
         const stockData = await stockRes.json();
         setLocations(locData.locations ?? []);
         setAllQuants(stockData.quants ?? []);
+        setProductCodes(stockData.productCodes ?? {});
       } catch (e) {
         console.error("Error loading layout data", e);
       } finally {
@@ -206,6 +208,7 @@ export default function BuscarPage() {
           quants={allQuants}
           highlightedLocations={highlightedLocations}
           highlightQuants={highlightQuants}
+          productCodes={productCodes}
           onBack={() => setSelectedRack(null)}
           onNavigateRack={(rn) => setSelectedRack({ ...selectedRack, rackNumber: rn })}
         />
