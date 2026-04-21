@@ -32,7 +32,30 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    return NextResponse.json({ quants });
+    // Batch-fetch product codes (x_sku / default_code)
+    let productCodes: Record<number, string> = {};
+    try {
+      const productIds = [...new Set(
+        quants.map((q) => (Array.isArray(q.product_id) ? q.product_id[0] : 0)).filter(Boolean)
+      )];
+      if (productIds.length > 0) {
+        const products = await odooCall<{ id: number; default_code: string | false; x_sku: string | false }[]>(
+          sid,
+          "product.product",
+          "search_read",
+          [[["id", "in", productIds]]],
+          { fields: ["id", "default_code", "x_sku"] }
+        );
+        for (const p of products) {
+          const code = (p.x_sku || p.default_code || "") as string;
+          if (code) productCodes[p.id] = code;
+        }
+      }
+    } catch (e) {
+      console.error("[API /odoo/stock] Failed to fetch product codes, continuing without them", e);
+    }
+
+    return NextResponse.json({ quants, productCodes });
   } catch (error) {
     console.error("[API /odoo/stock]", error);
     return NextResponse.json(
